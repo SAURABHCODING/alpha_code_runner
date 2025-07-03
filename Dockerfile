@@ -38,5 +38,5 @@ EXPOSE 3000
 
 USER judge0
 
-CMD ["./run"]
+CMD ["sh","./run"]
 
