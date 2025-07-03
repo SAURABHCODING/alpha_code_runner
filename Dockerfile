@@ -1,51 +1,39 @@
-FROM judge0/compilers:1.4.0 AS production
+FROM ruby:2.7
 
-ENV JUDGE0_HOMEPAGE="https://judge0.com"
-LABEL homepage=$JUDGE0_HOMEPAGE
-
-ENV JUDGE0_SOURCE_CODE="https://github.com/judge0/judge0"
-LABEL source_code=$JUDGE0_SOURCE_CODE
-
-ENV JUDGE0_MAINTAINER="Herman Zvonimir Došilović <hermanz.dosilovic@gmail.com>"
-LABEL maintainer=$JUDGE0_MAINTAINER
-
-ENV PATH="/usr/local/ruby-2.7.0/bin:/opt/.gem/bin:$PATH"
-ENV GEM_HOME="/opt/.gem/"
-
+# Install essential dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       cron \
       libpq-dev \
-      sudo && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo "gem: --no-document" > /root/.gemrc && \
-    gem install bundler:2.1.4 && \
-    npm install -g --unsafe-perm aglio@2.3.0
+      sudo \
+      nodejs \
+      npm && \
+    rm -rf /var/lib/apt/lists/*
 
-EXPOSE 2358
+ENV GEM_HOME="/usr/local/bundle"
+ENV PATH="$GEM_HOME/bin:$PATH"
 
-WORKDIR /api
+WORKDIR /app
 
-COPY Gemfile* ./
-RUN RAILS_ENV=production bundle
-
-# ❌ Removed broken cron copy
-# COPY cron /etc/cron.d
-# RUN cat /etc/cron.d/* | crontab -
-
+# Copy all project files
 COPY . .
 
-ENTRYPOINT ["/api/docker-entrypoint.sh"]
-CMD ["/api/scripts/server"]
-
-RUN useradd -u 1000 -m -r judge0 && \
+# ✅ Create /app/tmp to avoid chown failure
+RUN mkdir -p /app/tmp && \
+    useradd -u 1000 -m -r judge0 && \
     echo "judge0 ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
-    chown judge0: /api/tmp/
+    chown -R judge0: /app/tmp
+
+# Install Ruby dependencies
+RUN gem install bundler:2.1.4 && \
+    bundle install
+
+# Optional: Install global Node packages
+RUN npm install -g aglio@2.3.0
+
+EXPOSE 3000
 
 USER judge0
 
-ENV JUDGE0_VERSION="1.13.1"
-LABEL version=$JUDGE0_VERSION
+CMD ["./run"]
 
-FROM production AS development
-CMD ["sleep", "infinity"]
