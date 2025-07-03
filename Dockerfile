@@ -1,6 +1,6 @@
 FROM ruby:2.7
 
-# Install system dependencies
+# Install essential dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       cron \
@@ -15,30 +15,28 @@ ENV PATH="$GEM_HOME/bin:$PATH"
 
 WORKDIR /app
 
-# Copy code before installing gems
+# Copy project files
 COPY . .
 
-# Create judge0 user before permission setup
-RUN useradd -u 1000 -m -r judge0
+# ✅ Ensure `run` is executable
+RUN chmod +x ./run
 
-# ✅ Create needed dirs + fix permissions
-RUN mkdir -p /app/tmp /app/log && \
-    chown -R judge0:judge0 /app
+# ✅ Create log and tmp directories with proper ownership
+RUN mkdir -p log tmp && \
+    useradd -u 1000 -m -r judge0 && \
+    echo "judge0 ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
+    chown -R judge0:judge0 /app/log /app/tmp
 
-# ✅ Install bundler + all gems before switching users
+# ✅ Install Ruby dependencies
 RUN gem install bundler:2.1.4 && \
-    bundle config set --local path 'vendor/bundle' && \
     bundle install
 
 # Optional: Install global Node packages
 RUN npm install -g aglio@2.3.0
 
-# ✅ Make run script executable
-RUN chmod +x ./run
+EXPOSE 2358
 
-EXPOSE 3000
-
-# ✅ Switch user AFTER all setup
 USER judge0
 
+# ✅ Start the app via custom script
 CMD ["sh", "./run"]
