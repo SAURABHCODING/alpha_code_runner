@@ -4,8 +4,8 @@ set -e
 # Move to app directory
 cd /app
 
-# Start Judge0 queue and API
-service redis-server start
-service mariadb start
+# Start background workers (like Sidekiq)
 bundle exec sidekiq -d -L log/sidekiq.log
+
+# Start Rails server (Judge0-compatible API)
 bundle exec rails s -p 2358 -b 0.0.0.0
