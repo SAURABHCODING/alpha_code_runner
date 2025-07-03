@@ -1,42 +1,33 @@
-FROM ruby:2.7
+# ✅ Dockerfile for Judge0-compatible API (Railway-ready)
+FROM ruby:3.2
 
-# Install essential dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      cron \
-      libpq-dev \
-      sudo \
-      nodejs \
-      npm && \
-    rm -rf /var/lib/apt/lists/*
-
+# Set environment variables
 ENV GEM_HOME="/usr/local/bundle"
 ENV PATH="$GEM_HOME/bin:$PATH"
 
+# Set working directory
 WORKDIR /app
 
-# Copy project files
+# Copy all files
 COPY . .
 
-# ✅ Ensure `run` is executable
-RUN chmod +x ./run
+# Install required Linux packages
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    sudo \
+    nodejs \
+    npm \
+    cron && rm -rf /var/lib/apt/lists/*
 
-# ✅ Create log and tmp directories with proper ownership
-RUN mkdir -p log tmp && \
-    useradd -u 1000 -m -r judge0 && \
-    echo "judge0 ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
-    chown -R judge0:judge0 /app/log /app/tmp
+# Install Ruby dependencies
+RUN gem install bundler && bundle install
 
-# ✅ Install Ruby dependencies
-RUN gem install bundler:2.1.4 && \
-    bundle install
+# Set permissions for tmp and log directories
+RUN mkdir -p tmp log && chmod -R 777 tmp log
 
-# Optional: Install global Node packages
-RUN npm install -g aglio@2.3.0
-
+# Expose port for API
 EXPOSE 2358
 
-USER judge0
+# Default command to run
+CMD ["bundle", "exec", "rails", "server", "-p", "2358", "-b", "0.0.0.0"]
 
-# ✅ Start the app via custom script
-CMD ["sh", "./run"]
