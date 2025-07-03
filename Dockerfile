@@ -21,7 +21,7 @@ COPY . .
 # ✅ Add execute permission to run script
 RUN chmod +x ./run
 
-# ✅ Create /app/tmp to avoid chown failure
+# ✅ Create /app/tmp and set permissions
 RUN mkdir -p /app/tmp && \
     useradd -u 1000 -m -r judge0 && \
     echo "judge0 ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
@@ -34,9 +34,13 @@ RUN gem install bundler:2.1.4 && \
 # Optional: Install global Node packages
 RUN npm install -g aglio@2.3.0
 
-EXPOSE 3000
+# ✅ Expose Judge0-compatible API port
+EXPOSE 2358
 
+# ✅ Run app as unprivileged user
 USER judge0
 
-CMD ["sh","./run"]
+# ✅ Start via script
+CMD ["sh", "./run"]
+
 
