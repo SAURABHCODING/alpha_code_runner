@@ -1,19 +1,12 @@
 #!/bin/sh
 set -e
 
-# Load environment variables from .env if available
-if [ -f .env ]; then
-  export $(cat .env | grep -v '^#' | xargs)
-fi
-
 # Move to app directory
 cd /app
 
-# Ensure log directory exists
-mkdir -p log
+# ✅ Start Resque worker (non-daemon mode, background)
+QUEUE=* bundle exec rake resque:work &
 
-# Start background workers (e.g., Sidekiq)
-bundle exec sidekiq -d -L log/sidekiq.log
-
-# Start the Rails server (port 2358 for Judge0 API)
+# ✅ Start Rails server on port 2358 for Judge0-compatible API
 bundle exec rails s -p 2358 -b 0.0.0.0
+
