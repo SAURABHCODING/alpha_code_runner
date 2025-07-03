@@ -18,6 +18,9 @@ WORKDIR /app
 # Copy all project files
 COPY . .
 
+# ✅ Add execute permission to run script
+RUN chmod +x ./run
+
 # ✅ Create /app/tmp to avoid chown failure
 RUN mkdir -p /app/tmp && \
     useradd -u 1000 -m -r judge0 && \
