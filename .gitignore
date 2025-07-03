@@ -1,0 +1,10 @@
+log/*
+tmp/*
+!/log/.keep
+!/tmp/.keep
+.bundle/
+.byebug_history
+coverage/
+srv/
+environment
+.env
